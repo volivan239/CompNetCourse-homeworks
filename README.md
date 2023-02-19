@@ -1,1 +1,9 @@
-# CompNetCourse-homeworks
+# CompNetCourse-homeworks, Lab 01
+
+В этой ветке хранятся решения заданий первой лабораторной, по одному заданию в файле:
+
+* [Задание 1](Task1.md)
+* [Задание 2](Task2.md)
+* [Задание 3](Task3.md)
+* [Задание 4](Task4.md)
+* [Задание 5](Task5.md)
