@@ -2,7 +2,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.7.20"
-    application
 }
 
 group = "org.example"
@@ -12,20 +11,16 @@ repositories {
     mavenCentral()
 }
 
-dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.5")
-    implementation("com.athaydes.rawhttp:rawhttp-core:2.5.2")
-    testImplementation(kotlin("test"))
-}
+subprojects {
+    repositories {
+        mavenCentral()
+    }
 
-tasks.test {
-    useJUnitPlatform()
-}
+    apply {
+        plugin("kotlin")
+    }
 
-tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "1.8"
-}
-
-application {
-    mainClass.set("MainKt")
+    tasks.withType<KotlinCompile> {
+        kotlinOptions.jvmTarget = "11"
+    }
 }

@@ -1,0 +1,10 @@
+{
+  "client": "Raw",
+  "host": "smtp.gmail.com",
+  "port": 587,
+  "auth": true,
+  "tls": true,
+  "username": "example@gmail.com",
+  "password": "your-pass-here",
+  "debug": false
+}

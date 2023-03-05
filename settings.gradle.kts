@@ -1,3 +1,3 @@
+rootProject.name = "lab-05"
 
-rootProject.name = "tcp-web-server"
-
+include("smtp-client")

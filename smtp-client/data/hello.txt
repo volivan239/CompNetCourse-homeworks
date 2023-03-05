@@ -1,0 +1,7 @@
+Hi!
+
+This is sample message with attachment sent via Kotlin program
+
+---
+Best regards,
+Your program.
