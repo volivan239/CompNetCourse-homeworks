@@ -11,7 +11,7 @@ object Responder {
     private val badRequestStatusLine = StatusLine(version, 405, "Method not allowed")
 
     private val File.contentType
-        get() = Files.probeContentType(toPath())
+        get() = Files.probeContentType(toPath()) ?: "text/{$extension}"
 
     val notFoundResponse: RawHttpResponse<*>
         get() = RawHttpResponse(null, null, notFoundStatusLine, RawHttpHeaders.empty(), null)
