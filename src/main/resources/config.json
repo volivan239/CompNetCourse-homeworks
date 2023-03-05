@@ -1,0 +1,5 @@
+{
+  "port": 8080,
+  "banned": ["www.google.com", "www.ya.ru"],
+  "cache": "cache"
+}
