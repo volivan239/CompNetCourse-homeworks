@@ -1,1 +1,3 @@
-# CompNetCourse-homeworks
+# Практика 6. FTP клиент
+
+TODO
