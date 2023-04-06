@@ -27,8 +27,6 @@ class FtpSession(
 
     fun lsDirs(directory: String = ".") = client.listDirectories(directory).map { it.name }
 
-    fun cd(directory: String): Boolean = client.changeWorkingDirectory(directory)
-
     fun delete(pathName: String): Boolean = client.deleteFile(pathName)
 
     fun upload(file: File, to: String): Boolean {
@@ -42,8 +40,6 @@ class FtpSession(
             client.retrieveFile(from, it)
         }
     }
-
-    fun mkDir(pathName: String) = client.makeDirectory(pathName)
 
     override fun close() {
         client.disconnect()
