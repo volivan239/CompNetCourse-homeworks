@@ -1,13 +1,6 @@
-rootProject.name = "ftp-client"
-include("core")
-include("cli-client")
-include("gui-client")
+rootProject.name = "echo-udp"
 
-pluginManagement {
-    repositories {
-        google()
-        gradlePluginPortal()
-        mavenCentral()
-        maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
-    }
-}
+include("echo-server")
+include("echo-client")
+include("heartbeat-server")
+include("heartbeat-client")

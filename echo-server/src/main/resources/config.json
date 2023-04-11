@@ -1,0 +1,5 @@
+{
+  "port": 3456,
+  "droprate": 0.2,
+  "maxsize": 1024
+}
