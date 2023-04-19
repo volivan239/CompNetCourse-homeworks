@@ -1,4 +1,6 @@
 import aliexpresstcp.AliexpressTcpSocket
+import kotlinx.cli.ArgParser
+import kotlinx.cli.ArgType
 import kotlinx.serialization.ExperimentalSerializationApi
 import java.io.File
 import java.io.IOException
@@ -6,8 +8,14 @@ import java.io.IOException
 import java.net.InetSocketAddress
 
 @OptIn(ExperimentalSerializationApi::class)
-fun main() {
-    val socket = AliexpressTcpSocket(InetSocketAddress("localhost", 3456))
+fun main(args: Array<String>) {
+    val parser = ArgParser("client")
+
+    val port by parser.argument(ArgType.Int, "port", "Port to run server on")
+
+    parser.parse(args)
+
+    val socket = AliexpressTcpSocket(InetSocketAddress(port))
     while (true) {
         val (query, clientAddress) = socket.receiveQuery() ?: continue
 

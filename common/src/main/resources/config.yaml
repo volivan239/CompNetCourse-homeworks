@@ -1,0 +1,6 @@
+ackTimeoutMillis: 1000
+dropRate: 0.15
+corruptionRate: 0.15
+maxDataSize: 25620 # 25 Kb
+senderMaxFinCount: 5
+receiverTimeoutMillis: 5000

@@ -1,6 +1,7 @@
 package aliexpresstcp
 
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToByteArray
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.protobuf.ProtoBuf
@@ -12,6 +13,7 @@ import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetSocketAddress
 import java.net.SocketTimeoutException
+import kotlin.experimental.xor
 import kotlin.random.Random
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -28,35 +30,49 @@ class AliexpressTcpSocket(
         udpSocket.close()
     }
 
-    private fun sendUnchecked(packet: AliexpressTCPPacket, receiverAddress: InetSocketAddress) {
+    private fun sendPacket(packet: AliexpressTCPPacket, receiverAddress: InetSocketAddress) {
         // Imitating network losses
         logger.info("Sending $packet to $receiverAddress...")
-        if (rng.nextFloat() < connectionConfig.dropRate) {
+        val rnd = rng.nextFloat()
+
+        if (rnd < connectionConfig.dropRate) {
             logger.info("Lost simulated")
             return
         }
 
-        logger.info("Successfully sent")
         val bytes = ProtoBuf.encodeToByteArray(packet)
+
+        if (rnd < connectionConfig.dropRate + connectionConfig.corruptionRate) {
+            val corruptedIndex = rng.nextInt(bytes.size)
+            bytes[corruptedIndex] = bytes[corruptedIndex].xor(239.toByte())
+            logger.info("Data corruption simulated")
+        } else {
+            logger.info("Successfully sent")
+        }
+
         udpSocket.send(DatagramPacket(bytes, bytes.size, receiverAddress))
     }
 
-    private fun receiveUnchecked(what: String): Pair<AliexpressTCPPacket, InetSocketAddress>? {
+    private fun receivePacket(what: String): Pair<AliexpressTCPPacket, InetSocketAddress>? {
         val buf = ByteArray(connectionConfig.maxDataSize + 1024)
         val packet = DatagramPacket(buf, buf.size)
         logger.info("Waiting for $what...")
 
-        try {
-            udpSocket.receive(packet)
-        } catch (_: SocketTimeoutException) {
-            if (connectionConfig.enableLogging) {
-                logger.warn("Receive timed out")
-            }
+        udpSocket.receive(packet)
+
+        val aliexpressPacket = try {
+            ProtoBuf.decodeFromByteArray<AliexpressTCPPacket>(packet.data.copyOf(packet.length))
+        } catch (_: SerializationException) {
+            logger.warn("Can't deserialize received packet, probably corrupted data")
             return null
         }
 
-        val aliexpressPacket = ProtoBuf.decodeFromByteArray<AliexpressTCPPacket>(packet.data.copyOf(packet.length))
         val senderAddress = packet.socketAddress as InetSocketAddress
+
+        if (!aliexpressPacket.validateCheckSum()) {
+            logger.warn("Invalid check sum on received packet")
+            return null
+        }
 
         logger.info("Received $aliexpressPacket from $senderAddress")
         return aliexpressPacket to senderAddress
@@ -73,7 +89,13 @@ class AliexpressTcpSocket(
         var result: InetSocketAddress? = null
 
         while (true) {
-            val (packet, senderAddress) = receiveUnchecked("incoming data") ?: break
+            val (packet, senderAddress) = try {
+                receivePacket("incoming data")
+            } catch (_: SocketTimeoutException) {
+                logger.warn("Receive timed out")
+                break
+            } ?: continue
+
             result = senderAddress
 
             if (packet.num > num || receivedFin && !packet.fin) {
@@ -82,7 +104,7 @@ class AliexpressTcpSocket(
             }
 
             udpSocket.soTimeout = connectionConfig.receiverTimeoutMillis
-            sendUnchecked(AliexpressTCPPacket.getAckFor(packet), senderAddress)
+            sendPacket(AliexpressTCPPacket.getAckFor(packet), senderAddress)
 
             if (packet.num < num) {
                 // Duplicate detected
@@ -132,16 +154,26 @@ class AliexpressTcpSocket(
 
             val packet = AliexpressTCPPacket(num, ack = false, fin = false, bytes.copyOf(lengthRead))
             do {
-                sendUnchecked(packet, receiverAddress)
-            } while (receiveUnchecked("ack")?.first?.isAckFor(packet) != true)
+                sendPacket(packet, receiverAddress)
+                val ack = try {
+                    receivePacket("ack")?.first
+                } catch (_: SocketTimeoutException) {
+                    null
+                }
+            } while (ack?.isAckFor(packet) != true)
 
             num++
         }
 
         val finPacket = AliexpressTCPPacket(num, ack = false, fin = true, byteArrayOf())
         repeat(connectionConfig.senderMaxFinCount) {
-            sendUnchecked(finPacket, receiverAddress)
-            if (receiveUnchecked("fin ack")?.first?.isAckFor(finPacket) == true) {
+            sendPacket(finPacket, receiverAddress)
+            val ack = try {
+                receivePacket("fin ack")?.first
+            } catch (_: SocketTimeoutException) {
+                null
+            }
+            if (ack?.isAckFor(finPacket) == true) {
                 return true
             }
         }

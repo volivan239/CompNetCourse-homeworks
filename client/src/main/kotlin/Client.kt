@@ -8,7 +8,7 @@ import kotlin.random.Random
 
 @OptIn(ExperimentalSerializationApi::class)
 fun main(args: Array<String>) {
-    val parser = ArgParser("heartbeat-client")
+    val parser = ArgParser("client")
 
     val serverHost by parser.argument(ArgType.String, "host", "Server address")
     val serverPort by parser.argument(ArgType.Int, "port", "Server port")
