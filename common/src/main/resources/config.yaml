@@ -1,0 +1,4 @@
+timeoutMillis: 80
+dropRate: 0.15
+maxDataSize: 25620 # 25 Kb
+windowSize: 2
